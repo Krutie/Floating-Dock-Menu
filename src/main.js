@@ -8,5 +8,3 @@ const app = createApp(App);
 app.use(MotionPlugin);
 
 app.mount('#app');
-
-// createApp(App).mount('#app');

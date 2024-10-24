@@ -1,27 +1,20 @@
 // External
-import { computed, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { useMotionProperties, useSpring, reactiveStyle } from '@vueuse/motion';
+import { useMouse } from '@vueuse/core'
 
 // Project specific
 import { scalefactor } from '../utils';
-import { useMouse } from '../composables/useMouse.js';
 
 export function useDeckMotion(params) {
-  const { x, y } = useMouse();
+  const mouseDefault = reactive(useMouse())
+  const elementSize = ref(params.elementSize);
 
   const resize = (n) => {
-    return (
-      String(
-        Math.round(n * scalefactor(params.element.value, x.value, y.value))
-      ) + 'px'
-    );
+    elementSize.value = String(
+      Math.round(n * scalefactor(params.element.value, mouseDefault.x, mouseDefault.y))
+    ) + 'px';
   };
-
-  const elementSize = computed(() => {
-    return params.element.value
-      ? resize(params.elementSize)
-      : params.elementSize + 'px';
-  });
 
   // useMotionProperties on element to be transitioned
   const { motionProperties } = useMotionProperties(params.element);
@@ -29,7 +22,7 @@ export function useDeckMotion(params) {
   // useSpring to retrieve `set` method to use later in watch()
   const { set, stop } = useSpring(motionProperties, {
     mass: 0.1,
-    stiffness: 150,
+    stiffness: 70,
     damping: 12,
   });
   const { _state, style } = reactiveStyle({
@@ -37,11 +30,12 @@ export function useDeckMotion(params) {
     height: elementSize.value,
   });
 
-  watch(elementSize, (newVal) => {
+  // watch for mouse movements
+  watch(mouseDefault, (newVal) => {
+    resize(params.elementSize);
     set({
       width: elementSize.value,
       height: elementSize.value,
-      opacity: 0.85,
     });
     setTimeout(() => {
       stop;
